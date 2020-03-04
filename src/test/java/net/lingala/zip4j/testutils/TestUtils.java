@@ -1,5 +1,7 @@
 package net.lingala.zip4j.testutils;
 
+import net.lingala.zip4j.io.outputstream.ZipOutputStream;
+import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.util.FileUtils;
 import net.lingala.zip4j.util.InternalZipConstants;
 
@@ -12,6 +14,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
+import java.util.List;
 
 public class TestUtils {
 
@@ -75,6 +78,28 @@ public class TestUtils {
 
   public static void copyFile(File sourceFile, File destinationFile) throws IOException {
     Files.copy(sourceFile.toPath(), destinationFile.toPath());
+  }
+
+  public static void createZipFileWithZipOutputStream(File zipFile, List<File> filesToAdd) throws IOException {
+
+    byte[] buff = new byte[InternalZipConstants.BUFF_SIZE];
+    int readLen = -1;
+    ZipParameters zipParameters = new ZipParameters();
+
+    try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile))) {
+      for (File fileToAdd : filesToAdd) {
+        zipParameters.setFileNameInZip(fileToAdd.getName());
+        zipOutputStream.putNextEntry(zipParameters);
+
+        try(InputStream inputStream = new FileInputStream(fileToAdd)) {
+          while ((readLen = inputStream.read(buff)) != -1) {
+            zipOutputStream.write(buff, 0, readLen);
+          }
+        }
+
+        zipOutputStream.closeEntry();
+      }
+    }
   }
 
   private static OutputStream startNext7ZipSplitStream(File sourceFile, File outputFolder, int index) throws IOException {
